@@ -1,0 +1,59 @@
+device: cuda
+train:
+  batch_size: 1024
+  train_epochs: 90
+  loss:
+    - bceloss
+    - regularizationloss
+  optim:
+    name: adam
+    learning_rate: 0.001
+    others:
+  lr_scheduler:
+    name: steplr
+    others:
+      step_size: 50
+      gamma: 0.1
+  alpha: 0.1
+  model_path: ./pretrained
+  progress_path: ./train_progress
+  plot_epochs: 10
+model:
+  architecture:
+    encoder:
+        conv:
+            - Linear:
+                args: [784, 512]
+                bias: False
+            - Tanh:
+            - Linear:
+                args: [512, 256]
+                bias: False
+            - Tanh:
+            - Flatten:
+        mean:
+            - Linear:
+                args: [256, 32]
+                bias: False
+        log_var:
+            - Linear:
+                args: [256, 32]
+                bias: False
+    decoder:
+        - Linear:
+            args: [32, 256]
+            bias: False
+        - Tanh:
+        - Linear:
+            args: [256, 512]
+            bias: False
+        - Tanh:
+        - Linear:
+            args: [512, 784]
+            bias: False
+        - Sigmoid:
+test:
+  batch_size: 256
+  n_components: 2
+  model_path: ./pretrained/model_90.pt
+  results_path: ./results

@@ -1,19 +1,19 @@
 
-# pytorch-VAE
+# pytorch-inversed-VAE-MNIST
 
 ## Overview
 
 This repository contains an implementation of a Variational Autoencoder (VAE) using PyTorch, designed to explore the possibility of reconstructing inputs from outputs in deep learning models. The project examines the use of pseudo-inverses and activation function inverses in fully connected layers to achieve this goal.
+
+For more detailed information, please refer to the blog post linked below:
+[역함수와 역행렬로 딥러닝의 결과로부터 입력 복원하기](https://myinnerside.tistory.com/49)
+
 
 ## Description
 
 ### Objective
 
 The main objective is to investigate whether it is possible to reconstruct the input from the output in deep learning models. The exploration started with the idea that good prompts are crucial for large language models (LLMs) and image generation models. If we could reverse-engineer the prompts from the outputs, we might better understand how to generate desired results.
-
-### Inverse Functions and Matrices
-
-The project explores the use of pseudo-inverses for non-square matrices and the inverse of activation functions to achieve input reconstruction from outputs. Key activation functions examined include Identity, Sigmoid, and Tanh, which have well-defined inverses.
 
 ### Autoencoder
 
@@ -154,5 +154,3 @@ test:
   model_path: ./pretrained/model_90.pt
   results_path: ./results
 ```
-
-For more details, please refer to the code and documentation in the repository.

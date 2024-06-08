@@ -86,3 +86,27 @@ class SigmoidInverse(nn.Module):
         """
         x = torch.clamp(x, 0.001, 0.999)
         return torch.logit(x)
+
+
+class LeakyReLUInverse(nn.Module):
+    def __init__(self, negative_slope=0.01):
+        """
+        LeakyReLU Inverse Activation Layer.
+
+        This layer computes the inverse of the leaky relu function.
+        """
+        super(LeakyReLUInverse, self).__init__()
+        self.inv_negative_slope = 1 / negative_slope
+
+    def forward(self, x):
+        """
+        Forward pass of the LeakyReLU Inverse Layer.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor after applying the inverse leaky relu function.
+        """
+        output = (x >= 0) * x + (x < 0) * (x * self.inv_negative_slope)
+        return output

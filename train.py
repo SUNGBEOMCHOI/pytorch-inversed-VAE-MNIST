@@ -21,7 +21,7 @@ def train(args, cfg):
     ########################
     #   Get configuration  #
     ########################
-    device = torch.device('cuda' if cfg['device'] == 'cuda' and torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if cfg['device'] == 'cuda' and torch.cuda.is_available() else ('mps' if cfg['device'] == 'mps' and torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu'))
     train_cfg = cfg['train']
     batch_size = train_cfg['batch_size']
     train_epochs = train_cfg['train_epochs']

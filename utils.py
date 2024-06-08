@@ -225,6 +225,16 @@ def save_model(epoch, model, optimizer, history, lr_scheduler, file_path='./pret
         'lr_scheduler_state_dict': lr_scheduler.state_dict(),
     }, f'{file_path}/model_{epoch}.pt')
 
+# Custom transform to limit the range of pixel values
+class LimitRange:
+    def __init__(self, min_val=0.1, max_val=0.9):
+        self.min_val = min_val
+        self.max_val = max_val
+    
+    def __call__(self, tensor):
+        tensor = tensor * (self.max_val - self.min_val) + self.min_val
+        return tensor
+
 def get_train_dataset():
     """
     Return the training and validation datasets.
@@ -234,7 +244,11 @@ def get_train_dataset():
     Returns:
         tuple: Tuple containing the training dataset and validation dataset.
     """
-    train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transforms.ToTensor())
+    train_dataset = datasets.MNIST(root='./data', train=True, download=True, 
+                                   transform=transforms.Compose([
+                                       transforms.ToTensor(),
+                                    #    LimitRange(0.1, 0.9),
+                                   ]))
 
     train_size = int(len(train_dataset) * 0.9)
     validation_size = len(train_dataset) - train_size
@@ -252,7 +266,11 @@ def get_test_dataset():
     Returns:
         torch.utils.data.Dataset: The test dataset.
     """
-    test_dataset = datasets.MNIST(root='./data/', train=False, download=True, transform=transforms.ToTensor())
+    test_dataset = datasets.MNIST(root='./data/', train=False, download=True, 
+                                  transform=transforms.Compose([
+                                       transforms.ToTensor(),
+                                    #    LimitRange(0.1, 0.9),
+                                  ]))
     return test_dataset
 
 

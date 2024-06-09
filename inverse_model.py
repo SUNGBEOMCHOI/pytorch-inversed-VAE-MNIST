@@ -12,21 +12,19 @@ class InverseDecoderModel(nn.Module):
             encoder_params (dict): Dictionary containing the parameters of the encoder.
         """
         super(InverseDecoderModel, self).__init__()
-        self.layers = nn.ModuleList()
-        self.layers.append(SigmoidInverse())  # Add Sigmoid inverse at the beginning
+        self.layers = torch.nn.Sequential(
+            torch.nn.Linear(784, 256, bias=False),
+            LeakyReLUInverse(),
+            torch.nn.Linear(256, 32, bias=False),
+        )
 
-        for name, param in encoder_params.items():
-            if 'weight' in name:
-                out_features, in_features = param.shape
-                layer = nn.Linear(in_features, out_features, bias=False)
-                layer.weight = nn.Parameter(torch.tensor(param))
-                self.layers.append(layer)
-                self.layers.append(TanhInverse())  # Add Tanh inverse after each weight layer
-            elif 'bias' in name:
-                self.layers[-2].bias = nn.Parameter(torch.tensor(param))  # Attach bias to the corresponding layer
-
-        # Remove the last TanhInverse added
-        self.layers = self.layers[:-1]
+        for name, param in self.named_parameters():
+            if 'layers.0.weight' in name:
+                numpy_weight = encoder_params['encoder.1.weight']
+                param.data = torch.tensor(numpy_weight).T
+            elif 'layers.2.weight' in name:
+                numpy_weight = encoder_params['encoder.3.weight']
+                param.data = torch.tensor(numpy_weight).T
 
     def forward(self, x):
         """

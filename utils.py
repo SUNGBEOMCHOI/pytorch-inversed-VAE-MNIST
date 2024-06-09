@@ -203,9 +203,23 @@ def build_network(architecture, builder=Builder(torch.nn.__dict__)):
         layers.append(builder(name, *args, **kwargs))
     return torch.nn.Sequential(*layers)
 
+def round_tensor(tensor, decimal_places):
+    """
+    Round the values in a tensor to a specified number of decimal places.
+
+    Args:
+        tensor (torch.Tensor): The input tensor.
+        decimal_places (int): The number of decimal places to round to.
+
+    Returns:
+        torch.Tensor: The rounded tensor.
+    """
+    factor = 10 ** decimal_places
+    return torch.round(tensor * factor) / factor
+
 def save_model(epoch, model, optimizer, history, lr_scheduler, file_path='./pretrained'):
     """
-    Save the training checkpoint.
+    Save the training checkpoint with model weights rounded to 4 decimal places.
 
     Args:
         epoch (int): The current training epoch.
@@ -217,13 +231,39 @@ def save_model(epoch, model, optimizer, history, lr_scheduler, file_path='./pret
     Returns:
         None
     """
+    # Round model state dict to 4 decimal places
+    model_state_dict = model.state_dict()
+    rounded_model_state_dict = {k: round_tensor(v, 4) for k, v in model_state_dict.items()}
+
     torch.save({
         'epoch': epoch,
-        'model_state_dict': model.state_dict(),
+        'model_state_dict': rounded_model_state_dict,
         'optimizer_state_dict': optimizer.state_dict(),
         'history': history,
         'lr_scheduler_state_dict': lr_scheduler.state_dict(),
     }, f'{file_path}/model_{epoch}.pt')
+
+# def save_model(epoch, model, optimizer, history, lr_scheduler, file_path='./pretrained'):
+#     """
+#     Save the training checkpoint.
+
+#     Args:
+#         epoch (int): The current training epoch.
+#         model (torch.nn.Module): The trained model.
+#         optimizer (torch.optim.Optimizer): The optimizer used in training.
+#         lr_scheduler (torch.optim.lr_scheduler._LRScheduler): The learning rate scheduler used in training.
+#         file_path (str, optional): Path to save the checkpoint. Default is './pretrained'.
+
+#     Returns:
+#         None
+#     """
+#     torch.save({
+#         'epoch': epoch,
+#         'model_state_dict': model.state_dict(),
+#         'optimizer_state_dict': optimizer.state_dict(),
+#         'history': history,
+#         'lr_scheduler_state_dict': lr_scheduler.state_dict(),
+#     }, f'{file_path}/model_{epoch}.pt')
 
 # Custom transform to limit the range of pixel values
 class LimitRange:
@@ -309,7 +349,7 @@ def convert_decoder_params_to_numpy(model):
     decoder_params_numpy = {}
     for name, param in model.named_parameters():
         if 'decoder' in name:
-            decoder_params_numpy[name] = param.detach().cpu().numpy()
+            decoder_params_numpy[name] = param.detach().cpu().numpy().T
     return decoder_params_numpy
 
 def compute_pseudo_inverse(params_numpy):
@@ -345,8 +385,7 @@ def create_encoder_from_decoder_pinv(pseudo_inverse_params):
     
     for name in decoder_layers:
         layer_idx = int(name.split('.')[1])
-        new_layer_idx = len(decoder_layers) - 1 - layer_idx
-        
+        new_layer_idx = len(decoder_layers) + 1 - layer_idx
         new_name = name.replace(f'decoder.{layer_idx}', f'encoder.{new_layer_idx}')
         encoder_params[new_name] = pseudo_inverse_params[name]
     

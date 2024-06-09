@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import seaborn as sns
 
-from models import Model
+from models import Model, DeterministicModel
 from utils import get_test_dataset, get_dataloader
 
 def test(args, cfg):
@@ -43,7 +43,8 @@ def test(args, cfg):
     ########################
     # Get pretrained model #
     ########################
-    model = Model(model_cfg, device).to(device)
+    # model = Model(model_cfg, device).to(device)
+    model = DeterministicModel(model_cfg, device).to(device)
     checkpoint = torch.load(test_cfg['model_path'], map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
 
@@ -65,17 +66,15 @@ def test(args, cfg):
     for inputs, targets in test_loader:
         inputs, targets = inputs.to(device), targets.to(device)
         with torch.no_grad():
-            mean, log_var = model.encoding(inputs)
-            outputs = model.decoding(mean)
-        embedded_list.extend(copy.deepcopy(mean.cpu().numpy()))
+            # mean, log_var = model.encoding(inputs)
+            z = model.encoding(inputs)
+            outputs = model.decoding(z)
+        embedded_list.extend(copy.deepcopy(z.cpu().numpy()))
         target_list.extend(copy.deepcopy(targets.to(torch.int8).cpu().numpy()))
 
         for idx, target in enumerate(targets):
             origin_images[int(target)].append(inputs[idx].detach().cpu().numpy()[0])
             generated_images[int(target)].append(outputs[idx].detach().cpu().numpy()[0])
-        count += 1
-        if count == 5:
-            break
 
     X_embedded = sne_model.fit_transform(np.array(embedded_list))  # T-SNE
 
@@ -124,7 +123,7 @@ def test(args, cfg):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='./config/config.yaml', help='Path to config file')
+    parser.add_argument('--config', type=str, default='./config/deterministic_config.yaml', help='Path to config file')
     args = parser.parse_args()
 
     with open(args.config) as f:

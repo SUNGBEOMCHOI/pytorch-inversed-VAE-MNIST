@@ -1,0 +1,36 @@
+device: cuda
+model:
+  architecture:
+    encoder:
+        conv:
+            - Linear:
+                args: [784, 32]
+                bias: False
+            # - LeakyReLU:
+            # - Linear:
+            #     args: [256, 32]
+            #     bias: False
+            # - Tanh:
+            # - Linear:
+            #     args: [256, 32]
+            #     bias: False
+            # - Tanh:
+            # - Flatten:
+    decoder:
+        - Linear:
+            args: [32, 256]
+            bias: False
+        - LeakyReLU:
+        - Linear:
+            args: [256, 784]
+            bias: False
+        # - LeakyReLU:
+        # - Linear:
+        #     args: [512, 784]
+        #     bias: False
+test:
+  batch_size: 256
+  n_components: 2
+  model_path: ./deterministic_pretrained/model_90.pt
+  results_path: ./deterministic_inverse_results
+

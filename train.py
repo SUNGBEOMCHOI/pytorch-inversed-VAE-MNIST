@@ -4,7 +4,7 @@ import argparse
 import yaml
 import torch
 
-from models import Model
+from models import Model, DeterministicModel
 from utils import loss_func, optim_func, lr_scheduler_func, plot_progress, save_model, get_train_dataset, get_dataloader
 
 def train(args, cfg):
@@ -37,7 +37,8 @@ def train(args, cfg):
     ########################
     #      Make model      #
     ########################
-    model = Model(model_cfg, device).to(device)
+    # model = Model(model_cfg, device).to(device)
+    model = DeterministicModel(model_cfg, device).to(device)
     print(model)
 
     ########################
@@ -47,7 +48,8 @@ def train(args, cfg):
     train_loader = get_dataloader(train_dataset, batch_size, train=True)
     valid_loader = get_dataloader(valid_dataset, batch_size, train=False)
     criterion_list = loss_func(loss_name_list)
-    reconstruction_criterion, regularization_criterion = criterion_list
+    # reconstruction_criterion, regularization_criterion = criterion_list
+    reconstruction_criterion = criterion_list[0]
     optimizer = optim_func(model, optim_cfg)
     lr_scheduler = lr_scheduler_func(optimizer, lr_scheduler_cfg)
     history = {'train': [], 'validation': []}  # for saving loss
@@ -64,13 +66,15 @@ def train(args, cfg):
         model.train()
         for input, _ in train_loader:
             input, target = input.to(device), input.to(device)
-            mean, log_var = model.encoding(input.detach())
-            z = model.add_noise(mean, log_var)
+            # mean, log_var = model.encoding(input.detach())
+            z = model.encoding(input)
+            # z = model.add_noise(mean, log_var)
             output = model.decoding(z)
 
             reconstruction_loss = reconstruction_criterion(output, target.detach())
-            regularization_loss = regularization_criterion(mean, log_var)
-            loss = reconstruction_loss + alpha * regularization_loss
+            # regularization_loss = regularization_criterion(mean, log_var)
+            # loss = reconstruction_loss + alpha * regularization_loss
+            loss = reconstruction_loss
 
             optimizer.zero_grad()
             loss.backward()
@@ -102,19 +106,22 @@ def validation(model, validation_loader, criterion_list, alpha, device):
         float: Total validation loss.
     """
     total_loss = 0.0
-    reconstruction_criterion, regularization_criterion = criterion_list
+    # reconstruction_criterion, regularization_criterion = criterion_list
+    reconstruction_criterion = criterion_list[0]
     model.eval()
 
     for input, _ in validation_loader:
         input, target = input.to(device), input.to(device)
         with torch.no_grad():
-            mean, log_var = model.encoding(input)
-            z = model.add_noise(mean, log_var)
+            # mean, log_var = model.encoding(input)
+            z = model.encoding(input)
+            # z = model.add_noise(mean, log_var)
             output = model.decoding(z)
 
             reconstruction_loss = reconstruction_criterion(output.detach(), target.detach())
-            regularization_loss = regularization_criterion(mean.detach(), log_var.detach())
-            loss = reconstruction_loss + alpha * regularization_loss
+            # regularization_loss = regularization_criterion(mean.detach(), log_var.detach())
+            # loss = reconstruction_loss + alpha * regularization_loss
+            loss = reconstruction_loss
         total_loss += loss.item()
     total_loss /= len(validation_loader)
     
@@ -122,7 +129,7 @@ def validation(model, validation_loader, criterion_list, alpha, device):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='./config/config.yaml', help='Path to config file')
+    parser.add_argument('--config', type=str, default='./config/deterministic_config.yaml', help='Path to config file')
     args = parser.parse_args()
 
     with open(args.config) as f:

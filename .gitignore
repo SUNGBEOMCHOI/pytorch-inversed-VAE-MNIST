@@ -4,3 +4,5 @@ inverse_results/
 pretrained/
 results/
 train_progress/
+**/*.png
+**/*.pt

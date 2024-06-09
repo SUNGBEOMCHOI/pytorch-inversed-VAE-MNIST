@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.manifold import TSNE
 
-from models import Model
-from utils import get_test_dataset, get_dataloader, create_inverse_decoder_model
+from models import Model, DeterministicModel
+from utils import get_test_dataset, get_dataloader, create_inverse_decoder_model, get_train_dataset
 
 def test(args, cfg):
     """
@@ -20,7 +20,7 @@ def test(args, cfg):
     1. Distribution of latent vector
         Plot encoded latent vector of input images
     """
-    ########################
+    ########################i
     #   Get configuration  #
     ########################
     device = torch.device('cuda' if cfg['device'] == 'cuda' and torch.cuda.is_available() else ('mps' if cfg['device'] == 'mps' and torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu'))
@@ -33,7 +33,8 @@ def test(args, cfg):
     ########################
     # Get pretrained model #
     ########################
-    pretrained_model = Model(model_cfg, device).to(device)
+    # pretrained_model = Model(model_cfg, device).to(device)
+    pretrained_model = DeterministicModel(model_cfg, device).to(device)
     checkpoint = torch.load(test_cfg['model_path'], map_location=device)
     pretrained_model.load_state_dict(checkpoint['model_state_dict'])
 
@@ -79,7 +80,7 @@ def test(args, cfg):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='./config/inverse_config.yaml', help='Path to config file')
+    parser.add_argument('--config', type=str, default='./config/deterministic_inverse_config.yaml', help='Path to config file')
     args = parser.parse_args()
 
     with open(args.config) as f:

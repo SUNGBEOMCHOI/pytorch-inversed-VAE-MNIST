@@ -89,3 +89,66 @@ class Model(nn.Module):
         noise = torch.normal(0, 1, size=log_var.shape, device=self.device)
         std = torch.exp(0.5 * log_var)
         return mean + std * noise
+    
+class DeterministicModel(nn.Module):
+    def __init__(self, model_cfg, device=torch.device('cpu')):
+        """
+        Variational Autoencoder (VAE) model without noise.
+
+        Args:
+            model_cfg (dict): Dictionary containing model configuration.
+            device (torch.device, optional): Torch device to use (CPU or GPU). Default is CPU.
+        """
+        super().__init__()
+        self.device = device
+        architecture_encoder = model_cfg['architecture']['encoder']
+        architecture_decoder = model_cfg['architecture']['decoder']
+
+        self.encoder = build_network(architecture_encoder['conv'])
+        self.decoder = build_network(architecture_decoder)
+
+    def forward(self, x):
+        """
+        Encode input images and decode the latent vector.
+
+        Args:
+            x (numpy.ndarray or torch.Tensor): Batch of input images.
+
+        Returns:
+            torch.Tensor: Decoded output images.
+        """
+        if isinstance(x, np.ndarray):
+            x = torch.from_numpy(x).to(self.device)
+        latent_vector = self.encoding(x)
+        output = self.decoding(latent_vector)
+        return output
+
+    def encoding(self, x):
+        """
+        Encode input images to a latent vector.
+
+        Args:
+            x (torch.Tensor): Batch of input images.
+
+        Returns:
+            torch.Tensor: Latent vector of the encoded images.
+        """
+        x = x.to(self.device)
+        x = x.reshape(x.shape[0], -1)
+        x = self.encoder(x)
+        return x
+
+    def decoding(self, x):
+        """
+        Decode latent vectors to images.
+
+        Args:
+            x (torch.Tensor): Batch of latent vectors.
+
+        Returns:
+            torch.Tensor: Decoded batch of images.
+        """
+        x = x.to(self.device)
+        x = self.decoder(x)
+        output = x.reshape(x.shape[0], 1, 28, 28)
+        return output

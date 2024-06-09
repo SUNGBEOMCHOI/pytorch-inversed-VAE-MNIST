@@ -1,0 +1,55 @@
+device: cuda
+train:
+  batch_size: 1024
+  train_epochs: 90
+  loss:
+    - mseloss
+    # - regularizationloss
+  optim:
+    name: adam
+    learning_rate: 0.001
+    others:
+  lr_scheduler:
+    name: steplr
+    others:
+      step_size: 50
+      gamma: 0.1
+  alpha: 0.1
+  model_path: ./deterministic_pretrained
+  progress_path: ./deterministic_train_progress
+  plot_epochs: 10
+model:
+  architecture:
+    encoder:
+        conv:
+            - Linear:
+                args: [784, 32]
+                bias: False
+            # - LeakyReLU:
+            # - Linear:
+            #     args: [256, 32]
+            #     bias: False
+            # - LeakyReLU:
+            # - Linear:
+            #     args: [256, 32]
+            #     bias: False
+            # - LeakyReLU:
+            # - Flatten:
+    decoder:
+        - Linear:
+            args: [32, 256]
+            bias: False
+        - LeakyReLU:
+        - Linear:
+            args: [256, 784]
+            bias: False
+        # - LeakyReLU:
+        # - Linear:
+        #     args: [512, 784]
+        #     bias: False
+test:
+  batch_size: 256
+  n_components: 2
+  model_path: ./deterministic_pretrained/model_90.pt
+  results_path: ./deterministic_results
+
